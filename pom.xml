@@ -5,7 +5,7 @@
 
 	<groupId>org.springframework.data</groupId>
 	<artifactId>spring-data-commons</artifactId>
-	<version>1.11.0.OT.BUILD-SNAPSHOT</version>
+	<version>1.10.1.OT.BUILD-SNAPSHOT</version>
 
 	<name>Spring Data Core</name>
 
@@ -20,12 +20,14 @@
 		<url>https://github.com/oberthur/spring-data-commons</url>
 		<connection>scm:git:git@github.com:oberthur/spring-data-commons.git</connection>
 		<developerConnection>scm:git:git@github.com:oberthur/spring-data-commons.git</developerConnection>
-	</scm>
+		<tag>HEAD</tag>
+ 	</scm>
 
 	<properties>
 		<springhateoas>0.17.0.RELEASE</springhateoas>
 		<dist.key>DATACMNS</dist.key>
                 <guava>18.0</guava>
+		<release.maven.plugin.version>2.5.1</release.maven.plugin.version>
 	</properties>
 
 	<dependencies>
@@ -253,7 +255,14 @@
 				<groupId>org.asciidoctor</groupId>
 				<artifactId>asciidoctor-maven-plugin</artifactId>
 			</plugin>
-
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>${release.maven.plugin.version}</version>
+				<configuration>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
