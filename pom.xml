@@ -16,6 +16,12 @@
 		<relativePath>../spring-data-build/parent/pom.xml</relativePath>
 	</parent>
 
+	<scm>
+		<url>https://github.com/oberthur/spring-data-commons</url>
+		<connection>scm:git:git@github.com:oberthur/spring-data-commons.git</connection>
+		<developerConnection>scm:git:git@github.com:oberthur/spring-data-commons.git</developerConnection>
+	</scm>
+
 	<properties>
 		<springhateoas>0.17.0.RELEASE</springhateoas>
 		<dist.key>DATACMNS</dist.key>
