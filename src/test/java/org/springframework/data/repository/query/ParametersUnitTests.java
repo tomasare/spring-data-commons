@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 the original author or authors.
+ * Copyright 2008-2015 the original author or authors.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Unit test for {@link Parameters}.
@@ -123,8 +124,48 @@ public class ParametersUnitTests {
 		getParametersFor("validWithPageableFirst", Pageable.class, String.class);
 	}
 
-	private Parameters<?, ?> getParametersFor(String methodName, Class<?>... parameterTypes) throws SecurityException,
-			NoSuchMethodException {
+	/**
+	 * @see DATACMNS-731
+	 */
+	@Test
+	public void detectsExplicitlyNamedParameter() throws Exception {
+
+		Parameter parameter = getParametersFor("valid", String.class).getBindableParameter(0);
+
+		assertThat(parameter.getName(), is(notNullValue()));
+		assertThat(parameter.isExplicitlyNamed(), is(true));
+	}
+
+	/**
+	 * @see DATACMNS-731
+	 */
+	@Test
+	public void doesNotConsiderParameterExplicitlyNamedEvenIfNamePresent() throws Exception {
+
+		Parameter parameter = getParametersFor("validWithSortFirst", Sort.class, String.class).getBindableParameter(0);
+
+		Object methodParameter = ReflectionTestUtils.getField(parameter, "parameter");
+		ReflectionTestUtils.setField(methodParameter, "parameterName", "name");
+
+		assertThat(parameter.getName(), is(notNullValue()));
+		assertThat(parameter.isExplicitlyNamed(), is(false));
+	}
+
+	/**
+	 * @see DATACMNS-89
+	 */
+	@Test
+	public void detectsDynamicProjectionParameter() throws Exception {
+
+		Parameters<?, Parameter> parameters = getParametersFor("dynamicBind", Class.class, Class.class, Class.class);
+
+		assertThat(parameters.getParameter(0).isDynamicProjectionParameter(), is(true));
+		assertThat(parameters.getParameter(1).isDynamicProjectionParameter(), is(false));
+		assertThat(parameters.getParameter(2).isDynamicProjectionParameter(), is(false));
+	}
+
+	private Parameters<?, Parameter> getParametersFor(String methodName, Class<?>... parameterTypes)
+			throws SecurityException, NoSuchMethodException {
 
 		Method method = SampleDao.class.getMethod(methodName, parameterTypes);
 
@@ -153,5 +194,6 @@ public class ParametersUnitTests {
 
 		User emptyParameters();
 
+		<T> T dynamicBind(Class<T> type, Class<?> one, Class<Object> two);
 	}
 }

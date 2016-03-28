@@ -24,8 +24,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.core.RepositoryMetadata;
+import org.springframework.data.repository.util.QueryExecutionConverters;
+import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.ReflectionUtils;
 import org.springframework.util.Assert;
 
@@ -40,7 +43,9 @@ public class QueryMethod {
 
 	private final RepositoryMetadata metadata;
 	private final Method method;
+	private final Class<?> unwrappedReturnType;
 	private final Parameters<?, ?> parameters;
+	private final ResultProcessor resultProcessor;
 
 	private Class<?> domainClass;
 
@@ -48,13 +53,15 @@ public class QueryMethod {
 	 * Creates a new {@link QueryMethod} from the given parameters. Looks up the correct query to use for following
 	 * invocations of the method given.
 	 * 
-	 * @param method must not be {@literal null}
-	 * @param metadata must not be {@literal null}
+	 * @param method must not be {@literal null}.
+	 * @param metadata must not be {@literal null}.
+	 * @param factory must not be {@literal null}.
 	 */
-	public QueryMethod(Method method, RepositoryMetadata metadata) {
+	public QueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory) {
 
 		Assert.notNull(method, "Method must not be null!");
 		Assert.notNull(metadata, "Repository metadata must not be null!");
+		Assert.notNull(factory, "ProjectionFactory must not be null!");
 
 		for (Class<?> type : Parameters.TYPES) {
 			if (getNumberOfOccurences(method, type) > 1) {
@@ -64,6 +71,7 @@ public class QueryMethod {
 		}
 
 		this.method = method;
+		this.unwrappedReturnType = potentiallyUnwrapReturnTypeFor(method);
 		this.parameters = createParameters(method);
 		this.metadata = metadata;
 
@@ -85,6 +93,8 @@ public class QueryMethod {
 			Assert.isTrue(this.parameters.hasPageableParameter(),
 					String.format("Paging query needs to have a Pageable parameter! Offending method %s", method.toString()));
 		}
+
+		this.resultProcessor = new ResultProcessor(this, factory);
 	}
 
 	/**
@@ -140,8 +150,8 @@ public class QueryMethod {
 			Class<?> repositoryDomainClass = metadata.getDomainType();
 			Class<?> methodDomainClass = metadata.getReturnedDomainClass(method);
 
-			this.domainClass = repositoryDomainClass == null || repositoryDomainClass.isAssignableFrom(methodDomainClass) ? methodDomainClass
-					: repositoryDomainClass;
+			this.domainClass = repositoryDomainClass == null || repositoryDomainClass.isAssignableFrom(methodDomainClass)
+					? methodDomainClass : repositoryDomainClass;
 		}
 
 		return domainClass;
@@ -163,9 +173,9 @@ public class QueryMethod {
 	 */
 	public boolean isCollectionQuery() {
 
-		Class<?> returnType = method.getReturnType();
 		return !(isPageQuery() || isSliceQuery())
-				&& org.springframework.util.ClassUtils.isAssignable(Iterable.class, returnType) || returnType.isArray();
+				&& org.springframework.util.ClassUtils.isAssignable(Iterable.class, unwrappedReturnType)
+				|| unwrappedReturnType.isArray();
 	}
 
 	/**
@@ -175,9 +185,7 @@ public class QueryMethod {
 	 * @since 1.8
 	 */
 	public boolean isSliceQuery() {
-
-		Class<?> returnType = method.getReturnType();
-		return !isPageQuery() && org.springframework.util.ClassUtils.isAssignable(Slice.class, returnType);
+		return !isPageQuery() && org.springframework.util.ClassUtils.isAssignable(Slice.class, unwrappedReturnType);
 	}
 
 	/**
@@ -186,9 +194,7 @@ public class QueryMethod {
 	 * @return
 	 */
 	public final boolean isPageQuery() {
-
-		Class<?> returnType = method.getReturnType();
-		return org.springframework.util.ClassUtils.isAssignable(Page.class, returnType);
+		return org.springframework.util.ClassUtils.isAssignable(Page.class, unwrappedReturnType);
 	}
 
 	/**
@@ -216,7 +222,7 @@ public class QueryMethod {
 	 * @since 1.10
 	 */
 	public boolean isStreamQuery() {
-		return ReflectionUtils.isJava8StreamType(method.getReturnType());
+		return ReflectionUtils.isJava8StreamType(unwrappedReturnType);
 	}
 
 	/**
@@ -228,6 +234,15 @@ public class QueryMethod {
 		return parameters;
 	}
 
+	/**
+	 * Returns the {@link ResultProcessor} to be usedwith the query method.
+	 * 
+	 * @return the resultFactory
+	 */
+	public ResultProcessor getResultProcessor() {
+		return resultProcessor;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
@@ -235,5 +250,15 @@ public class QueryMethod {
 	@Override
 	public String toString() {
 		return method.toString();
+	}
+
+	private static Class<? extends Object> potentiallyUnwrapReturnTypeFor(Method method) {
+
+		if (QueryExecutionConverters.supports(method.getReturnType())) {
+			// unwrap only one level to handle cases like Future<List<Entity>> correctly.
+			return ClassTypeInformation.fromReturnTypeOf(method).getComponentType().getType();
+		}
+
+		return method.getReturnType();
 	}
 }

@@ -17,10 +17,13 @@ package org.springframework.data.web;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -34,7 +37,8 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
  * @author Oliver Gierke
  * @since 1.10
  */
-public class ProxyingHandlerMethodArgumentResolver extends ModelAttributeMethodProcessor implements BeanFactoryAware {
+public class ProxyingHandlerMethodArgumentResolver extends ModelAttributeMethodProcessor
+		implements BeanFactoryAware, ResourceLoaderAware, BeanClassLoaderAware {
 
 	private final SpelAwareProxyProjectionFactory proxyFactory;
 	private final ConversionService conversionService;
@@ -59,6 +63,25 @@ public class ProxyingHandlerMethodArgumentResolver extends ModelAttributeMethodP
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		this.proxyFactory.setBeanFactory(beanFactory);
+	}
+
+	/**
+	 * @see org.springframework.context.ResourceLoaderAware#setResourceLoader(org.springframework.core.io.ResourceLoader)
+	 * @deprecated rather set the {@link ClassLoader} via {@link #setBeanClassLoader(ClassLoader)}.
+	 */
+	@Override
+	@Deprecated
+	public void setResourceLoader(ResourceLoader resourceLoader) {
+		this.proxyFactory.setResourceLoader(resourceLoader);
+	}
+
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.BeanClassLoaderAware#setBeanClassLoader(java.lang.ClassLoader)
+	 */
+	@Override
+	public void setBeanClassLoader(ClassLoader classLoader) {
+		this.proxyFactory.setBeanClassLoader(classLoader);
 	}
 
 	/* 

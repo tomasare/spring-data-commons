@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,24 @@
  */
 package org.springframework.data.projection;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.CollectionFactory;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ObjectUtils;
 
 /**
  * {@link MethodInterceptor} to delegate the invocation to a different {@link MethodInterceptor} but creating a
@@ -40,6 +45,7 @@ class ProjectingMethodInterceptor implements MethodInterceptor {
 
 	private final ProjectionFactory factory;
 	private final MethodInterceptor delegate;
+	private final ConversionService conversionService;
 
 	/**
 	 * Creates a new {@link ProjectingMethodInterceptor} using the given {@link ProjectionFactory} and delegate
@@ -56,6 +62,7 @@ class ProjectingMethodInterceptor implements MethodInterceptor {
 
 		this.factory = factory;
 		this.delegate = delegate;
+		this.conversionService = new DefaultConversionService();
 	}
 
 	/* 
@@ -72,13 +79,16 @@ class ProjectingMethodInterceptor implements MethodInterceptor {
 		}
 
 		TypeInformation<?> type = ClassTypeInformation.fromReturnTypeOf(invocation.getMethod());
+		Class<?> rawType = type.getType();
 
-		if (type.isCollectionLike()) {
+		if (type.isCollectionLike() && !ClassUtils.isPrimitiveArray(rawType)) {
 			return projectCollectionElements(asCollection(result), type);
 		} else if (type.isMap()) {
 			return projectMapValues((Map<?, ?>) result, type);
+		} else if (conversionRequiredAndPossible(result, rawType)) {
+			return conversionService.convert(result, rawType);
 		} else {
-			return getProjection(result, type.getType());
+			return getProjection(result, rawType);
 		}
 	}
 
@@ -90,12 +100,18 @@ class ProjectingMethodInterceptor implements MethodInterceptor {
 	 * @param type must not be {@literal null}.
 	 * @return
 	 */
-	private Collection<Object> projectCollectionElements(Collection<?> sources, TypeInformation<?> type) {
+	private Object projectCollectionElements(Collection<?> sources, TypeInformation<?> type) {
 
-		Collection<Object> result = CollectionFactory.createCollection(type.getType(), sources.size());
+		Class<?> rawType = type.getType();
+		Collection<Object> result = CollectionFactory.createCollection(rawType.isArray() ? List.class : rawType,
+				sources.size());
 
 		for (Object source : sources) {
 			result.add(getProjection(source, type.getComponentType().getType()));
+		}
+
+		if (rawType.isArray()) {
+			return result.toArray((Object[]) Array.newInstance(type.getComponentType().getType(), result.size()));
 		}
 
 		return result;
@@ -121,8 +137,25 @@ class ProjectingMethodInterceptor implements MethodInterceptor {
 	}
 
 	private Object getProjection(Object result, Class<?> returnType) {
-		return ClassUtils.isAssignable(returnType, result.getClass()) ? result : factory.createProjection(returnType,
-				result);
+		return result == null || ClassUtils.isAssignable(returnType, result.getClass()) ? result
+				: factory.createProjection(returnType, result);
+	}
+
+	/**
+	 * Returns whether the source object needs to be converted to the given target type and whether we can convert it at
+	 * all.
+	 * 
+	 * @param source can be {@literal null}.
+	 * @param targetType must not be {@literal null}.
+	 * @return
+	 */
+	private boolean conversionRequiredAndPossible(Object source, Class<?> targetType) {
+
+		if (source == null || targetType.isInstance(source)) {
+			return false;
+		}
+
+		return conversionService.canConvert(source.getClass(), targetType);
 	}
 
 	/**
@@ -139,7 +172,7 @@ class ProjectingMethodInterceptor implements MethodInterceptor {
 		if (source instanceof Collection) {
 			return (Collection<?>) source;
 		} else if (source.getClass().isArray()) {
-			return Arrays.asList((Object[]) source);
+			return Arrays.asList(ObjectUtils.toObjectArray(source));
 		} else {
 			return Collections.singleton(source);
 		}

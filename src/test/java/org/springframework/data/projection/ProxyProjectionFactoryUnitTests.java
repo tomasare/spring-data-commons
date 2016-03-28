@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package org.springframework.data.projection;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -155,10 +157,10 @@ public class ProxyProjectionFactoryUnitTests {
 	@Test
 	public void returnsAllPropertiesAsInputProperties() {
 
-		List<String> result = factory.getInputProperties(CustomerExcerpt.class);
+		ProjectionInformation projectionInformation = factory.getProjectionInformation(CustomerExcerpt.class);
+		List<PropertyDescriptor> result = projectionInformation.getInputProperties();
 
-		assertThat(result, hasSize(2));
-		assertThat(result, hasItems("firstname", "address"));
+		assertThat(result, hasSize(6));
 	}
 
 	/**
@@ -188,10 +190,88 @@ public class ProxyProjectionFactoryUnitTests {
 		assertThat(((TargetAware) excerpt).getTarget(), is(instanceOf(Map.class)));
 	}
 
+	/**
+	 * @see DATACMNS-722
+	 */
+	@Test
+	public void doesNotProjectPrimitiveArray() {
+
+		Customer customer = new Customer();
+		customer.picture = "binarydata".getBytes();
+
+		CustomerExcerpt excerpt = factory.createProjection(CustomerExcerpt.class, customer);
+
+		assertThat(excerpt.getPicture(), is(customer.picture));
+	}
+
+	/**
+	 * @see DATACMNS-722
+	 */
+	@Test
+	public void projectsNonPrimitiveArray() {
+
+		Address address = new Address();
+		address.city = "New York";
+		address.zipCode = "ZIP";
+
+		Customer customer = new Customer();
+		customer.shippingAddresses = new Address[] { address };
+
+		CustomerExcerpt excerpt = factory.createProjection(CustomerExcerpt.class, customer);
+
+		assertThat(excerpt.getShippingAddresses(), is(arrayWithSize(1)));
+	}
+
+	/**
+	 * @see DATACMNS-782
+	 */
+	@Test
+	public void convertsPrimitiveValues() {
+
+		Customer customer = new Customer();
+		customer.id = 1L;
+
+		CustomerExcerpt excerpt = factory.createProjection(CustomerExcerpt.class, customer);
+
+		assertThat(excerpt.getId(), is(customer.id.toString()));
+	}
+
+	/**
+	 * @see DATACMNS-89
+	 */
+	@Test
+	public void exposesProjectionInformationCorrectly() {
+
+		ProjectionInformation information = factory.getProjectionInformation(CustomerExcerpt.class);
+
+		assertThat(information.getType(), is(typeCompatibleWith(CustomerExcerpt.class)));
+		assertThat(information.isClosed(), is(true));
+	}
+
+	/**
+	 * @see DATACMNS-829
+	 */
+	@Test
+	public void projectsMapOfStringToObjectCorrectly() {
+
+		Customer customer = new Customer();
+		customer.data = Collections.singletonMap("key", null);
+
+		Map<String, Object> data = factory.createProjection(CustomerExcerpt.class, customer).getData();
+
+		assertThat(data, is(notNullValue()));
+		assertThat(data.containsKey("key"), is(true));
+		assertThat(data.get("key"), is(nullValue()));
+	}
+
 	static class Customer {
 
+		public Long id;
 		public String firstname, lastname;
 		public Address address;
+		public byte[] picture;
+		public Address[] shippingAddresses;
+		public Map<String, Object> data;
 	}
 
 	static class Address {
@@ -201,9 +281,17 @@ public class ProxyProjectionFactoryUnitTests {
 
 	interface CustomerExcerpt {
 
+		String getId();
+
 		String getFirstname();
 
 		AddressExcerpt getAddress();
+
+		AddressExcerpt[] getShippingAddresses();
+
+		byte[] getPicture();
+
+		Map<String, Object> getData();
 	}
 
 	interface AddressExcerpt {

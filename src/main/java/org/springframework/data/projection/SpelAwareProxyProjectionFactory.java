@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.springframework.util.ReflectionUtils;
  * 
  * @author Oliver Gierke
  * @author Thomas Darimont
+ * @author Mark Paluch
  * @since 1.10
  */
 public class SpelAwareProxyProjectionFactory extends ProxyProjectionFactory implements BeanFactoryAware {
@@ -75,23 +76,34 @@ public class SpelAwareProxyProjectionFactory extends ProxyProjectionFactory impl
 			typeCache.put(projectionType, callback.hasFoundAnnotation());
 		}
 
-		return typeCache.get(projectionType) ? new SpelEvaluatingMethodInterceptor(interceptor, source, beanFactory,
-				parser, projectionType) : interceptor;
+		return typeCache.get(projectionType)
+				? new SpelEvaluatingMethodInterceptor(interceptor, source, beanFactory, parser, projectionType) : interceptor;
 	}
 
 	/* 
 	 * (non-Javadoc)
-	 * @see org.springframework.data.projection.ProxyProjectionFactory#isProperty(java.beans.PropertyDescriptor)
+	 * @see org.springframework.data.projection.ProxyProjectionFactory#getProjectionInformation(java.lang.Class)
 	 */
 	@Override
-	protected boolean isInputProperty(PropertyDescriptor descriptor) {
+	public ProjectionInformation getProjectionInformation(Class<?> projectionType) {
 
-		Method readMethod = descriptor.getReadMethod();
+		return new DefaultProjectionInformation(projectionType) {
 
-		if (readMethod == null) {
-			return false;
-		}
+			/* 
+			 * (non-Javadoc)
+			 * @see org.springframework.data.projection.DefaultProjectionInformation#isInputProperty(java.beans.PropertyDescriptor)
+			 */
+			@Override
+			protected boolean isInputProperty(PropertyDescriptor descriptor) {
 
-		return AnnotationUtils.findAnnotation(readMethod, Value.class) == null;
+				Method readMethod = descriptor.getReadMethod();
+
+				if (readMethod == null) {
+					return false;
+				}
+
+				return AnnotationUtils.findAnnotation(readMethod, Value.class) == null;
+			}
+		};
 	}
 }

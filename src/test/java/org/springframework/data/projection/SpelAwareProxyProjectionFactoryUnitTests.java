@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ import static org.junit.Assert.*;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.springframework.beans.NotWritablePropertyException;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -29,10 +32,13 @@ import org.springframework.beans.factory.annotation.Value;
  * 
  * @author Oliver Gierke
  * @author Thomas Darimont
+ * @author Mark Paluch
  */
 public class SpelAwareProxyProjectionFactoryUnitTests {
 
-	private SpelAwareProxyProjectionFactory factory;
+	public @Rule ExpectedException exception = ExpectedException.none();
+
+	SpelAwareProxyProjectionFactory factory;
 
 	@Before
 	public void setup() {
@@ -65,6 +71,48 @@ public class SpelAwareProxyProjectionFactoryUnitTests {
 		assertThat(properties, hasItem("firstname"));
 	}
 
+	/**
+	 * @see DATACMNS-89
+	 */
+	@Test
+	public void considersProjectionUsingAtValueNotClosed() {
+
+		ProjectionInformation information = factory.getProjectionInformation(CustomerExcerpt.class);
+
+		assertThat(information.isClosed(), is(false));
+	}
+
+	/**
+	 * @see DATACMNS-820
+	 */
+	@Test
+	public void setsValueUsingProjection() {
+
+		Customer customer = new Customer();
+		customer.firstname = "Dave";
+
+		CustomerExcerpt excerpt = factory.createProjection(CustomerExcerpt.class, customer);
+		excerpt.setFirstname("Carl");
+
+		assertThat(customer.firstname, is("Carl"));
+	}
+
+	/**
+	 * @see DATACMNS-820
+	 */
+	@Test
+	public void settingNotWriteablePropertyFails() {
+
+		Customer customer = new Customer();
+		customer.firstname = "Dave";
+
+		ProjectionWithNotWriteableProperty projection = factory.createProjection(ProjectionWithNotWriteableProperty.class,
+				customer);
+
+		exception.expect(NotWritablePropertyException.class);
+		projection.setFirstName("Carl");
+	}
+
 	static class Customer {
 
 		public String firstname, lastname;
@@ -76,5 +124,12 @@ public class SpelAwareProxyProjectionFactoryUnitTests {
 		String getFullName();
 
 		String getFirstname();
+
+		void setFirstname(String firstname);
+	}
+
+	interface ProjectionWithNotWriteableProperty {
+
+		void setFirstName(String firstname);
 	}
 }

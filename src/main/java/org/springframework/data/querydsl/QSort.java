@@ -22,15 +22,13 @@ import java.util.List;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
-import com.mysema.query.types.Expression;
-import com.mysema.query.types.OrderSpecifier;
-import com.mysema.query.types.Path;
-import com.mysema.query.types.PathMetadata;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Path;
 
 /**
- * Sort option for queries that wraps a querydsl {@link OrderSpecifier}.
+ * Sort option for queries that wraps a Querydsl {@link OrderSpecifier}.
  * 
  * @author Thomas Darimont
  * @author Christoph Strobl
@@ -44,7 +42,7 @@ public class QSort extends Sort implements Serializable {
 	/**
 	 * Creates a new {@link QSort} instance with the given {@link OrderSpecifier}s.
 	 * 
-	 * @param orderSpecifiers must not be {@literal null} or empty;
+	 * @param orderSpecifiers must not be {@literal null} or empty.
 	 */
 	public QSort(OrderSpecifier<?>... orderSpecifiers) {
 		this(Arrays.asList(orderSpecifiers));
@@ -53,10 +51,12 @@ public class QSort extends Sort implements Serializable {
 	/**
 	 * Creates a new {@link QSort} instance with the given {@link OrderSpecifier}s.
 	 * 
-	 * @param orderSpecifiers must not be {@literal null} or empty;
+	 * @param orderSpecifiers must not be {@literal null} or empty.
 	 */
 	public QSort(List<OrderSpecifier<?>> orderSpecifiers) {
+
 		super(toOrders(orderSpecifiers));
+
 		Assert.notEmpty(orderSpecifiers, "Order specifiers must not be null or empty!");
 		this.orderSpecifiers = orderSpecifiers;
 	}
@@ -154,16 +154,9 @@ public class QSort extends Sort implements Serializable {
 	 */
 	private static String preparePropertyPath(Path<?> path) {
 
-		PathMetadata<?> metadata = path.getMetadata();
-		Path<?> parent = metadata.getParent();
+		Path<?> root = path.getRoot();
 
-		if (parent == null) {
-			return "";
-		}
-
-		String basPath = preparePropertyPath(parent);
-		String element = metadata.getElement().toString();
-
-		return StringUtils.hasText(basPath) ? basPath.concat(".").concat(element) : basPath.concat(element);
+		return root == null || path.equals(root) ? path.toString()
+				: path.toString().substring(root.toString().length() + 1);
 	}
 }
