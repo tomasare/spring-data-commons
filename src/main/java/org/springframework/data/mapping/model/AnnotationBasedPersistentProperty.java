@@ -26,6 +26,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.annotation.AccessType;
 import org.springframework.data.annotation.AccessType.Type;
 import org.springframework.data.annotation.Id;
@@ -223,15 +224,19 @@ public abstract class AnnotationBasedPersistentProperty<P extends PersistentProp
 				continue;
 			}
 
-			A annotation = AnnotatedElementUtils.findMergedAnnotation(method, annotationType);
+			// Revert back to spring 4.1.6
+			A annotation = AnnotationUtils.findAnnotation(method, annotationType);
+			//A annotation = AnnotatedElementUtils.findMergedAnnotation(method, annotationType);
 
 			if (annotation != null) {
 				return cacheAndReturn(annotationType, annotation);
 			}
 		}
 
-		return cacheAndReturn(annotationType,
-				field == null ? null : AnnotatedElementUtils.findMergedAnnotation(field, annotationType));
+		// Revert back to spring 4.1.6
+		return cacheAndReturn(annotationType, field == null ? null : AnnotationUtils.getAnnotation(field, annotationType));
+//		return cacheAndReturn(annotationType,
+//				field == null ? null : AnnotatedElementUtils.findMergedAnnotation(field, annotationType));
 	}
 
 	/* 

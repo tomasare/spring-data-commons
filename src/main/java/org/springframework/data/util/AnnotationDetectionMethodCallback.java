@@ -19,6 +19,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils.MethodCallback;
 
@@ -95,7 +96,9 @@ public class AnnotationDetectionMethodCallback<A extends Annotation> implements 
 			return;
 		}
 
-		A foundAnnotation = AnnotatedElementUtils.findMergedAnnotation(method, annotationType);
+		// revert back to spring 4.1.6
+		A foundAnnotation = AnnotationUtils.findAnnotation(method, annotationType);
+//		A foundAnnotation = AnnotatedElementUtils.findMergedAnnotation(method, annotationType);
 
 		if (foundAnnotation != null) {
 

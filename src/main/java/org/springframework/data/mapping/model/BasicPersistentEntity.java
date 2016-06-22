@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.AssociationHandler;
@@ -285,7 +286,9 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
 	 */
 	public Object getTypeAlias() {
 
-		TypeAlias alias = AnnotatedElementUtils.findMergedAnnotation(getType(), TypeAlias.class);
+	    // Revert back to spring 4.1.6
+	    TypeAlias alias = getType().getAnnotation(TypeAlias.class);
+//		TypeAlias alias = AnnotatedElementUtils.findMergedAnnotation(getType(), TypeAlias.class);
 		return alias == null ? null : StringUtils.hasText(alias.value()) ? alias.value() : null;
 	}
 
@@ -366,7 +369,9 @@ public class BasicPersistentEntity<T, P extends PersistentProperty<P>> implement
 			return (A) annotationCache.get(annotationType);
 		}
 
-		A annotation = AnnotatedElementUtils.findMergedAnnotation(getType(), annotationType);
+		// revert to spring 4.1.6
+		A annotation = AnnotationUtils.findAnnotation(getType(), annotationType);
+//		A annotation = AnnotatedElementUtils.findMergedAnnotation(getType(), annotationType);
 		annotationCache.put(annotationType, annotation);
 
 		return annotation;

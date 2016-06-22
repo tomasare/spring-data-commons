@@ -29,7 +29,8 @@ import javax.annotation.Nullable;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.annotation.AliasFor;
+// Revert to spring 4.1.6
+//import org.springframework.core.annotation.AliasFor;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.annotation.AccessType;
 import org.springframework.data.annotation.AccessType.Type;
@@ -222,36 +223,37 @@ public class AnnotationBasedPersistentPropertyUnitTests<P extends AnnotationBase
 		assertThat(field.get(MyAnnotation.class), is(nullValue()));
 	}
 
-	/**
-	 * @see DATACMNS-825
-	 */
-	@Test
-	public void composedAnnotationWithAliasForGetCachedCorrectly() {
-
-		SamplePersistentProperty property = entity.getPersistentProperty("metaAliased");
-
-		// Assert direct annotations are cached on construction
-		Map<Class<? extends Annotation>, Annotation> cache = getAnnotationCache(property);
-		assertThat(cache.containsKey(MyComposedAnnotationUsingAliasFor.class), is(true));
-		assertThat(cache.containsKey(MyAnnotation.class), is(false));
-
-		// Assert meta annotation is found and cached
-		MyAnnotation annotation = property.findAnnotation(MyAnnotation.class);
-		assertThat(annotation, is(notNullValue()));
-		assertThat(cache.containsKey(MyAnnotation.class), is(true));
-	}
-
-	/**
-	 * @see DATACMNS-825
-	 */
-	@Test
-	public void composedAnnotationWithAliasShouldHaveSynthesizedAttributeValues() {
-
-		SamplePersistentProperty property = entity.getPersistentProperty("metaAliased");
-
-		MyAnnotation annotation = property.findAnnotation(MyAnnotation.class);
-		assertThat(AnnotationUtils.getValue(annotation), is((Object) "spring"));
-	}
+// Revert to spring 4.1.6
+//	/**
+//	 * @see DATACMNS-825
+//	 */
+//	@Test
+//	public void composedAnnotationWithAliasForGetCachedCorrectly() {
+//
+//		SamplePersistentProperty property = entity.getPersistentProperty("metaAliased");
+//
+//		// Assert direct annotations are cached on construction
+//		Map<Class<? extends Annotation>, Annotation> cache = getAnnotationCache(property);
+//		assertThat(cache.containsKey(MyComposedAnnotationUsingAliasFor.class), is(true));
+//		assertThat(cache.containsKey(MyAnnotation.class), is(false));
+//
+//		// Assert meta annotation is found and cached
+//		MyAnnotation annotation = property.findAnnotation(MyAnnotation.class);
+//		assertThat(annotation, is(notNullValue()));
+//		assertThat(cache.containsKey(MyAnnotation.class), is(true));
+//	}
+//
+//	/**
+//	 * @see DATACMNS-825
+//	 */
+//	@Test
+//	public void composedAnnotationWithAliasShouldHaveSynthesizedAttributeValues() {
+//
+//		SamplePersistentProperty property = entity.getPersistentProperty("metaAliased");
+//
+//		MyAnnotation annotation = property.findAnnotation(MyAnnotation.class);
+//		assertThat(AnnotationUtils.getValue(annotation), is((Object) "spring"));
+//	}
 
 	@SuppressWarnings("unchecked")
 	private Map<Class<? extends Annotation>, Annotation> getAnnotationCache(SamplePersistentProperty property) {
@@ -280,8 +282,9 @@ public class AnnotationBasedPersistentPropertyUnitTests<P extends AnnotationBase
 		String doubleMapping;
 
 		@MyAnnotationAsMeta String meta;
-
-		@MyComposedAnnotationUsingAliasFor String metaAliased;
+// Revert to spring 4.1.6		
+//
+//		@MyComposedAnnotationUsingAliasFor String metaAliased;
 
 		@MyAnnotation
 		public String getGetter() {
@@ -349,14 +352,15 @@ public class AnnotationBasedPersistentPropertyUnitTests<P extends AnnotationBase
 
 	}
 
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target(value = { FIELD, METHOD })
-	@MyAnnotation
-	public static @interface MyComposedAnnotationUsingAliasFor {
-
-		@AliasFor(annotation = MyAnnotation.class, attribute = "value")
-		String name() default "spring";
-	}
+// Revert back to spring 4.1.6	
+//	@Retention(RetentionPolicy.RUNTIME)
+//	@Target(value = { FIELD, METHOD })
+//	@MyAnnotation
+//	public static @interface MyComposedAnnotationUsingAliasFor {
+//
+//		@AliasFor(annotation = MyAnnotation.class, attribute = "value")
+//		String name() default "spring";
+//	}
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(value = { FIELD, METHOD, ANNOTATION_TYPE })

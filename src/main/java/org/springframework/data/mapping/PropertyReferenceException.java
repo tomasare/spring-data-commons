@@ -21,7 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.beans.PropertyMatches;
+// Revert back to spring 4.1.6
+//import org.springframework.beans.PropertyMatches;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -143,8 +144,9 @@ public class PropertyReferenceException extends RuntimeException {
 	private static Set<String> detectPotentialMatches(String propertyName, Class<?> type) {
 
 		Set<String> result = new HashSet<String>();
-		result.addAll(Arrays.asList(PropertyMatches.forField(propertyName, type).getPossibleMatches()));
-		result.addAll(Arrays.asList(PropertyMatches.forProperty(propertyName, type).getPossibleMatches()));
+//		 Revert back to spring 4.1.6
+//		result.addAll(Arrays.asList(PropertyMatches.forField(propertyName, type).getPossibleMatches()));
+//		result.addAll(Arrays.asList(PropertyMatches.forProperty(propertyName, type).getPossibleMatches()));
 
 		return result;
 	}

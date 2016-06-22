@@ -28,6 +28,19 @@
 		<release.maven.plugin.version>2.5.1</release.maven.plugin.version>
 		<scala>2.11.7</scala>
 	</properties>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-framework-bom</artifactId>
+				<version>4.1.6.RELEASE</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
 
 	<dependencies>
 		<dependency>

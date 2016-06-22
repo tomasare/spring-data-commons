@@ -56,7 +56,9 @@ public class AnnotationDetectionFieldCallback implements FieldCallback {
 			return;
 		}
 
-		Annotation annotation = AnnotatedElementUtils.findMergedAnnotation(field, annotationType);
+		// revert back to spring 4.1.6
+		Annotation annotation = field.getAnnotation(annotationType);
+//		Annotation annotation = AnnotatedElementUtils.findMergedAnnotation(field, annotationType);
 
 		if (annotation != null) {
 

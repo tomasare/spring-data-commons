@@ -32,7 +32,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.core.annotation.AliasFor;
+// Revert back to spring 4.1.6
+//import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -227,16 +228,17 @@ public class BasicPersistentEntityUnitTests<T extends PersistentProperty<T>> {
 		assertThat(entity.getPropertyAccessor(new Subtype()), is(notNullValue()));
 	}
 
-	/**
-	 * @see DATACMNS-825
-	 */
-	@Test
-	public void returnsTypeAliasIfAnnotatedUsingComposedAnnotation() {
-
-		PersistentEntity<AliasEntityUsingComposedAnnotation, T> entity = createEntity(
-				AliasEntityUsingComposedAnnotation.class);
-		assertThat(entity.getTypeAlias(), is((Object) "bar"));
-	}
+// Revert to spring 4.1.6
+//	/**
+//	 * @see DATACMNS-825
+//	 */
+//	@Test
+//	public void returnsTypeAliasIfAnnotatedUsingComposedAnnotation() {
+//
+//		PersistentEntity<AliasEntityUsingComposedAnnotation, T> entity = createEntity(
+//				AliasEntityUsingComposedAnnotation.class);
+//		assertThat(entity.getTypeAlias(), is((Object) "bar"));
+//	}
 
 	private <S> BasicPersistentEntity<S, T> createEntity(Class<S> type) {
 		return createEntity(type, null);
@@ -264,17 +266,18 @@ public class BasicPersistentEntityUnitTests<T extends PersistentProperty<T>> {
 			return property;
 		}
 	}
+// Revert back to spring 4.1.6	
+//
+//	@Retention(RetentionPolicy.RUNTIME)
+//	@TypeAlias("foo")
+//	static @interface ComposedTypeAlias {
+//
+//		@AliasFor(annotation = TypeAlias.class, attribute = "value")
+//		String name() default "bar";
+//	}
 
-	@Retention(RetentionPolicy.RUNTIME)
-	@TypeAlias("foo")
-	static @interface ComposedTypeAlias {
-
-		@AliasFor(annotation = TypeAlias.class, attribute = "value")
-		String name() default "bar";
-	}
-
-	@ComposedTypeAlias
-	static class AliasEntityUsingComposedAnnotation {}
+//	@ComposedTypeAlias
+//	static class AliasEntityUsingComposedAnnotation {}
 
 	static class Subtype extends Entity {}
 }
