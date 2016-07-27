@@ -5,7 +5,7 @@
 
 	<groupId>org.springframework.data</groupId>
 	<artifactId>spring-data-commons</artifactId>
-	<version>1.12.0.OT.BUILD-SNAPSHOT</version>
+	<version>1.12.0.OT.BUILD</version>
 
 	<name>Spring Data Core</name>
 
@@ -20,7 +20,7 @@
 		<url>https://github.com/oberthur/spring-data-commons</url>
 		<connection>scm:git:git@github.com:oberthur/spring-data-commons.git</connection>
 		<developerConnection>scm:git:git@github.com:oberthur/spring-data-commons.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>1.12.0.OT.BUILD</tag>
  	</scm>
 
 	<properties>
